@@ -12,7 +12,7 @@ class GitCloneService
 {
     protected string $baseClonePath;
     protected GitHubService $github;
-    protected int $maxSizeKb = 1000;
+    protected int $maxSizeKb = 100000;
 
     public function __construct(GitHubService $github)
     {
@@ -24,10 +24,7 @@ class GitCloneService
         }
     }
 
-    /**
-     * Repository  shallow clone
-     * Returns: clone folder full path
-     */
+
     public function clone(string $repoUrl, int $jobId): string
     {
         $this->validateRepository($repoUrl);
@@ -84,10 +81,7 @@ class GitCloneService
         }
     }
 
-    /**
-     * Cloned folder permanently delete karo
-     * HAMESHA call karo — code store nahi karna
-     */
+
     public function cleanup(string $clonePath): void
     {
         if (!is_dir($clonePath)) return;
@@ -102,9 +96,7 @@ class GitCloneService
         clearstatcache();
     }
 
-    /**
-     * Clone path return karo (exist karta hai ya nahi check ke saath)
-     */
+
     public function getClonePath(int $jobId): string
     {
         return $this->baseClonePath . DIRECTORY_SEPARATOR . "job_{$jobId}";

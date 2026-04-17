@@ -39,6 +39,8 @@ return new class extends Migration
                 }
             */
 
+            $table->string('source')->nullable();
+            $table->string('suggestion')->nullable();
             // Debug ke liye store karo — production mein nullable rakhna theek hai
             $table->text('raw_llm_response')->nullable();
 

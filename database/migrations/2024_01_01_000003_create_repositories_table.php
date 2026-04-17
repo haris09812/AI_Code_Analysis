@@ -19,6 +19,11 @@ return new class extends Migration
             $table->unsignedInteger('forks')->default(0);
             $table->unsignedInteger('commits_count')->default(0);
             $table->json('languages')->nullable();
+            $table->integer('open_prs')->default(0);
+            $table->integer('merged_prs')->default(0);
+            $table->json('contributors')->nullable();
+            $table->json('recent_commits')->nullable();
+            $table->string('repo_age')->nullable();
             $table->string('default_branch', 50)->default('main');
             $table->boolean('is_private')->default(false);
             $table->timestamps();
