@@ -1,5 +1,4 @@
 <?php
-// app/Services/FileExtractorService.php
 
 namespace App\Services;
 
@@ -9,35 +8,22 @@ use SplFileInfo;
 
 class FileExtractorService
 {
-    // Yeh folders bilkul skip karo
-    protected array $skipDirs = [
-        'node_modules', 'vendor', 'dist', 'build', 'config',
-        '.git', '.github', '__pycache__', '.idea', '.vscode',
-        'coverage', 'public/build', 'storage', 'bootstrap/cache'
-    ];
+    protected array $skipDirs;
 
-    // Sirf yeh extensions analyze karo
-    protected array $allowedExtensions = [
-        'php', 'js', 'ts', 'jsx', 'tsx',
-        'py', 'java', 'go', 'rb', 'cs',
-        'cpp', 'c', 'rs', 'vue', 'swift',
-        'kt', 'scala', 'r', 'dart'
-    ];
+    protected array $allowedExtensions;
 
-    // Yeh file patterns skip karo
-    protected array $skipPatterns = [
-        '*.min.js', '*.min.css',
-        '*.lock', '.env',
-        '*.map', '*.bundle.js'
-    ];
+    protected array $skipPatterns;
 
-    // Max file size — 200KB se bada skip karo
-    protected int $maxFileSizeBytes = 204800;
+    protected int $maxFileSizeBytes;
 
-    /**
-     * Clone path se saari valid source files extract karo
-     * Returns: array of file info arrays
-     */
+    public function __construct()
+    {
+        $this->skipDirs = config('analyzer.skip_dirs', []);
+        $this->allowedExtensions = config('analyzer.allowed_extensions', []);
+        $this->skipPatterns = config('analyzer.skip_patterns', []);
+        $this->maxFileSizeBytes = config('analyzer.max_file_size_kb',200) * 1024;
+    }
+
     public function extract(string $clonePath): array
     {
         $files = [];
@@ -68,9 +54,6 @@ class FileExtractorService
         return $files;
     }
 
-    /**
-     * Sirf file tree return karo — content ke bina (UI file explorer ke liye)
-     */
     public function extractTree(string $clonePath): array
     {
         $files = $this->extract($clonePath);
@@ -82,12 +65,8 @@ class FileExtractorService
         ], $files);
     }
 
-    /**
-     * File skip karni chahiye ya nahi
-     */
     protected function shouldSkip(SplFileInfo $file, string $basePath): bool
     {
-        // File nahi hai toh skip
         if (!$file->isFile()) return true;
 
         // Banned directories check
@@ -100,29 +79,22 @@ class FileExtractorService
             }
         }
 
-        // Extension check
         $ext = strtolower($file->getExtension());
         if (!in_array($ext, $this->allowedExtensions)) return true;
 
-        // Skip patterns check
         $filename = $file->getFilename();
         foreach ($this->skipPatterns as $pattern) {
             $regex = '/^' . str_replace(['*', '.'], ['.*', '\.'], $pattern) . '$/i';
             if (preg_match($regex, $filename)) return true;
         }
 
-        // Size check — bohot badi files skip karo
         if ($file->getSize() > $this->maxFileSizeBytes) return true;
 
-        // Empty files skip karo
         if ($file->getSize() === 0) return true;
 
         return false;
     }
 
-    /**
-     * Stats return karo — kitni files, extensions breakdown
-     */
     public function getStats(array $files): array
     {
         $extensions = [];

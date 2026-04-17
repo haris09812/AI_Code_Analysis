@@ -29,9 +29,14 @@ return [
     ],
 
     'github' => [
-        'token' => env('GITHUB_TOKEN'),
+        'token'           => env('GITHUB_TOKEN'),
         'app_id'          => env('GITHUB_APP_ID'),
         'installation_id' => env('GITHUB_APP_INSTALLATION_ID'),
+    ],
+
+    'gemini' => [
+        'key'            => env('GEMINI_API_KEY'),
+        'gemini_rpm'     => env('GEMINI_RPM', 10),
     ],
 
     'slack' => [

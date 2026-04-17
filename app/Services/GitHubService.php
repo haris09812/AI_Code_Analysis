@@ -24,10 +24,7 @@ class GitHubService
         $this->privateKeyPath = storage_path('app/github-private-key.pem');
     }
 
-    /**
-     * GitHub App ke liye temporary Installation Access Token mangwana ya Cache se nikalna.
-     */
-    protected function getInstallationToken(): string
+    protected function InstallationToken(): string
     {
         return Cache::remember('github_app_token', 3500, function () {
             if (!file_exists($this->privateKeyPath)) {
@@ -57,9 +54,6 @@ class GitHubService
         });
     }
 
-    /**
-     * Shared headers using GitHub App Token.
-     */
     protected function clientHeaders(): array
     {
         $headers = [
@@ -68,22 +62,28 @@ class GitHubService
         ];
 
         try {
-            $token = $this->getInstallationToken();
+            $token = $this->InstallationToken();
             if ($token) {
                 $headers['Authorization'] = "token " . $token;
+                Log::info('GitHubService: Using App token');
             }
         } catch (\Exception $e) {
-            // Agar App install nahi hai ya private key missing hai,
-            // toh hum anonymous request bhejenge (Rate limit low hogi: 60/hr)
-            Log::info("GitHub App Fallback: " . $e->getMessage());
+            Log::warning('GitHubService: App token failed, using unauthenticated', [
+                'error' => $e->getMessage(),
+            ]);
         }
+        // ← Fallback: Personal Access Token
+        $pat = config('services.github.token');
+        if (!empty($pat)) {
+            $headers['Authorization'] = "Bearer {$pat}";
+            Log::info('GitHubService: Using PAT fallback');
+            return $headers;
+        }
+
+        Log::warning('GitHubService: No auth — unauthenticated request');
 
         return $headers;
     }
-
-    /**
-     * URL se Owner aur Repo nikalna.
-     */
     public function parseRepoUrl(string $url): array
     {
         $path = parse_url($url, PHP_URL_PATH) ?? '';
@@ -97,76 +97,150 @@ class GitHubService
         return [$segments[0], $segments[1]];
     }
 
-
-    /**
-     * Complete Metadata fetch karna (Parallel requests ke sath).
-     */
     public function getRepoMetadata(string $url): array
     {
         [$owner, $repo] = $this->parseRepoUrl($url);
         $cacheKey = "repo_full_meta_{$owner}_{$repo}";
 
+        // return Cache::remember($cacheKey, 3600, function () use ($owner, $repo) {
+        //     $headers = $this->clientHeaders();
+
+        //     $responses = Http::pool(fn ($pool) => [
+        //         $pool->as('main')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}"),
+        //         $pool->as('langs')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/languages"),
+        //         $pool->as('commits')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/commits", ['per_page' => 5]),
+        //         $pool->as('contributors')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/contributors", ['per_page' => 10]),
+        //         $pool->as('pr_open')->withHeaders($headers)->get("{$this->baseUrl}/search/issues", ['q' => "repo:{$owner}/{$repo} type:pr state:open"]),
+        //         $pool->as('pr_merged')->withHeaders($headers)->get("{$this->baseUrl}/search/issues", ['q' => "repo:{$owner}/{$repo} type:pr is:merged"]),
+        //     ]);
+
+
+        //     // Connection error check karo pehle
+        // if ($responses['main'] instanceof \Illuminate\Http\Client\ConnectionException) {
+        //     throw new Exception("GitHub se connection nahi hua. Internet check karo.");
+        // }
+
+        // // 404 check
+        // if ($responses['main']->status() === 404) {
+        //     throw new Exception("Repository nahi mila. Agar ye private hai toh App install karna zaroori hai.");
+        // }
+
+        // // Other errors
+        // if ($responses['main']->failed()) {
+        //     throw new Exception("GitHub API failed for {$owner}/{$repo}: " . $responses['main']->status());
+        // }
+
+        //     $data = $responses['main']->json();
+
+        //     return [
+        //         'identity' => [
+        //             'name'           => $data['name'],
+        //             'full_name'      => $data['full_name'],
+        //             'description'    => $data['description'],
+        //             'url'            => $data['html_url'],
+        //         ],
+        //         'stats' => [
+        //             'stars'          => $data['stargazers_count'],
+        //             'forks'          => $data['forks_count'],
+        //             'size_kb'        => $data['size'],
+        //             'primary_lang'   => $data['language'],
+        //             'languages'      => $responses['langs']->json() ?? [],
+        //         ],
+        //         'history' => [
+        //             'created_at'     => $data['created_at'],
+        //             'repo_age'       => Carbon::parse($data['created_at'])->diffForHumans(),
+        //             'default_branch' => $data['default_branch'],
+        //         ],
+        //         'pull_requests' => [
+        //             'open'   => $responses['pr_open']->successful() ? ($responses['pr_open']->json()['total_count'] ?? 0) : 0,
+        //             'merged' => $responses['pr_merged']->successful() ? ($responses['pr_merged']->json()['total_count'] ?? 0) : 0,
+        //         ],
+        //         'contributors' => collect($responses['contributors']->json() ?? [])->map(fn($u) => [
+        //             'name'       => $u['login'] ?? 'Unknown',
+        //             'avatar'     => $u['avatar_url'] ?? '',
+        //             'profile'    => $u['html_url'] ?? '',
+        //             'commits'    => $u['contributions'] ?? 0
+        //         ])->toArray(),
+        //         'recent_commits' => collect($responses['commits']->json() ?? [])->map(fn($c) => [
+        //             'message'    => $c['commit']['message'],
+        //             'author'     => $c['commit']['author']['name'],
+        //             'date'       => Carbon::parse($c['commit']['author']['date'])->diffForHumans(),
+        //             'url'        => $c['html_url']
+        //         ])->toArray(),
+        //     ];
+        // });
         return Cache::remember($cacheKey, 3600, function () use ($owner, $repo) {
-            $headers = $this->clientHeaders();
 
-            // HTTP Pool: Saari API calls aik sath jayengi
-            $responses = Http::pool(fn ($pool) => [
-                $pool->as('main')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}"),
-                $pool->as('langs')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/languages"),
-                $pool->as('commits')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/commits", ['per_page' => 5]),
-                $pool->as('contributors')->withHeaders($headers)->get("{$this->baseUrl}/repos/{$owner}/{$repo}/contributors", ['per_page' => 10]),
-                $pool->as('pr_open')->withHeaders($headers)->get("{$this->baseUrl}/search/issues", ['q' => "repo:{$owner}/{$repo} type:pr state:open"]),
-                $pool->as('pr_merged')->withHeaders($headers)->get("{$this->baseUrl}/search/issues", ['q' => "repo:{$owner}/{$repo} type:pr is:merged"]),
-            ]);
+            $main = $this->http()->get("{$this->baseUrl}/repos/{$owner}/{$repo}");
 
-
-            if ($responses['main']->status() === 404) {
-                throw new Exception("Repository nahi mila. Agar ye private hai toh App install karna zaroori hai.");
+            if ($main->status() === 404) {
+                throw new Exception("Repository nahi mila.");
+            }
+            if ($main->failed()) {
+                throw new Exception("GitHub API failed: " . $main->status());
             }
 
-            if ($responses['main']->failed()) {
-                // throw new Exception("GitHub API failed for {$owner}/{$repo}");
-                throw new Exception("GitHub API failed for {$owner}/{$repo}: " . $responses['main']->status());
-            }
+            $data = $main->json();
 
-            $data = $responses['main']->json();
+            $langs        = $this->http()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/languages");
+            $commits      = $this->http()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/commits", ['per_page' => 5]);
+            $contributors = $this->http()->get("{$this->baseUrl}/repos/{$owner}/{$repo}/contributors", ['per_page' => 10]);
+            $prOpen       = $this->http()->get("{$this->baseUrl}/search/issues", [
+                                'q' => "repo:{$owner}/{$repo} type:pr state:open"
+                            ]);
+            $prMerged     = $this->http()->get("{$this->baseUrl}/search/issues", [
+                                'q' => "repo:{$owner}/{$repo} type:pr is:merged"
+                            ]);
 
             return [
                 'identity' => [
-                    'name'           => $data['name'],
-                    'full_name'      => $data['full_name'],
-                    'description'    => $data['description'],
-                    'url'            => $data['html_url'],
+                    'name'        => $data['name'],
+                    'full_name'   => $data['full_name'],
+                    'description' => $data['description'],
+                    'url'         => $data['html_url'],
                 ],
                 'stats' => [
-                    'stars'          => $data['stargazers_count'],
-                    'forks'          => $data['forks_count'],
-                    'size_kb'        => $data['size'],
-                    'primary_lang'   => $data['language'],
-                    'languages'      => $responses['langs']->json() ?? [],
+                    'stars'        => $data['stargazers_count'],
+                    'forks'        => $data['forks_count'],
+                    'size_kb'      => $data['size'],
+                    'primary_lang' => $data['language'],
+                    'languages'    => $langs->successful() ? $langs->json() : [],
                 ],
                 'history' => [
                     'created_at'     => $data['created_at'],
-                    'repo_age'       => Carbon::parse($data['created_at'])->diffForHumans(),
+                    'repo_age'       => \Carbon\Carbon::parse($data['created_at'])->diffForHumans(),
                     'default_branch' => $data['default_branch'],
                 ],
                 'pull_requests' => [
-                    'open'   => $responses['pr_open']->successful() ? ($responses['pr_open']->json()['total_count'] ?? 0) : 0,
-                    'merged' => $responses['pr_merged']->successful() ? ($responses['pr_merged']->json()['total_count'] ?? 0) : 0,
+                    'open'   => $prOpen->successful() ? ($prOpen->json()['total_count'] ?? 0) : 0,
+                    'merged' => $prMerged->successful() ? ($prMerged->json()['total_count'] ?? 0) : 0,
                 ],
-                'contributors' => collect($responses['contributors']->json() ?? [])->map(fn($u) => [
-                    'name'       => $u['login'] ?? 'Unknown',
-                    'avatar'     => $u['avatar_url'] ?? '',
-                    'profile'    => $u['html_url'] ?? '',
-                    'commits'    => $u['contributions'] ?? 0
-                ])->toArray(),
-                'recent_commits' => collect($responses['commits']->json() ?? [])->map(fn($c) => [
-                    'message'    => $c['commit']['message'],
-                    'author'     => $c['commit']['author']['name'],
-                    'date'       => Carbon::parse($c['commit']['author']['date'])->diffForHumans(),
-                    'url'        => $c['html_url']
-                ])->toArray(),
+                'contributors' => collect($contributors->successful() ? $contributors->json() : [])
+                    ->map(fn($u) => [
+                        'name'    => $u['login'] ?? 'Unknown',
+                        'avatar'  => $u['avatar_url'] ?? '',
+                        'profile' => $u['html_url'] ?? '',
+                        'commits' => $u['contributions'] ?? 0,
+                    ])->toArray(),
+                'recent_commits' => collect($commits->successful() ? $commits->json() : [])
+                    ->map(fn($c) => [
+                        'message' => $c['commit']['message'],
+                        'author'  => $c['commit']['author']['name'],
+                        'date'    => \Carbon\Carbon::parse($c['commit']['author']['date'])->diffForHumans(),
+                        'url'     => $c['html_url'],
+                    ])->toArray(),
             ];
         });
+    }
+
+    protected function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        $client = Http::withHeaders($this->clientHeaders())->timeout(30);
+
+        if (app()->environment('local')) {
+            $client = $client->withoutVerifying();
+        }
+
+        return $client;
     }
 }
