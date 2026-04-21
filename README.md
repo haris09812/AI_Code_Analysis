@@ -1,21 +1,21 @@
 <p align="center">
-  <img src="./public/images/demo.gif" width="800"/>
+  <img src="images/demo.gif" width="800"/>
 </p>
 
 ## 📸 UI Preview
 
 ### Dashboard
-<img src="./public/images/dashboard1.png"/>
+<img src="images/dashboard1.png"/>
 
 ### Processing
-<img src="./public/images/processing1.png"/>
+<img src="images/processing1.png"/>
 
 ### Results
-<img src="./public/images/result.png"/>
+<img src="images/result.png"/>
 
 ### File Analysis
-<img src="./public/images/file-analysis-human.png"/>
-<img src="./public/images/file-analysis-ai"/>
+<img src="images/file-analysis-human.png"/>
+<img src="images/file-analysis-ai"/>
 
 
 # 🧠 AI Code Analyzer
