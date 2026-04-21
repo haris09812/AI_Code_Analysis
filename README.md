@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../public/images/demo.gif" width="800"/>
+  <img src="./public/images/demo.gif" width="800"/>
 </p>
 
 ## 📸 UI Preview
