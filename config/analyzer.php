@@ -13,7 +13,7 @@ return [
         'php', 'js', 'ts', 'jsx', 'tsx',
         'py', 'java', 'go', 'rb', 'cs',
         'cpp', 'c', 'rs', 'vue', 'swift',
-        'kt', 'scala', 'r', 'dart'
+        'kt', 'scala', 'r', 'dart', 'ipynb'
     ],
 
     'skip_dirs' => [
