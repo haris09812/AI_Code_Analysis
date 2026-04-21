@@ -71,7 +71,7 @@ This system solves that problem using **automated repository analysis + AI class
 
 <p align="center">
   <img src="https://cdn.sanity.io/images/chol0sk5/production/ce0b2266373b3c9722b0bccb9a98441c26c89696-1200x630.png" width="100"/>
-  <img src="https://cdn.deepseek.com/images/deepseek-chat-open-graph-image.jpeg" width="100"/>
+  <img src="https://cdn.deepseek.com/logo.png?x-image-process=image%2Fresize%2Cw_1920" width="100"/>
   <img src="https://x.ai/opengraph-image.png?6014284994b18e1d" width="100"/>
   <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_4g_512_lt_f94943af3be039176192d.png" width="100"/>
 </p>
