@@ -1,8 +1,8 @@
+
+## 📸 UI Preview
 <p align="center">
   <img src="images/demo.gif" width="800"/>
 </p>
-
-## 📸 UI Preview
 
 ### Dashboard
 <img src="images/dashboard1.png"/>
