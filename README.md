@@ -70,10 +70,10 @@ This system solves that problem using **automated repository analysis + AI class
 ## 🧠 AI Engine (Multi-Model Strategy)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/groq/groq-api-examples/main/assets/groq-logo.png" width="100"/>
-  <img src="https://seeklogo.com/images/D/deepseek-logo-3F6E9F8C1F-seeklogo.com.png" width="100"/>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/XAI_logo.svg/512px-XAI_logo.svg.png" width="100"/>
-  <img src="https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini_logo.max-600x600.png" width="100"/>
+  <img src="https://cdn.sanity.io/images/chol0sk5/production/ce0b2266373b3c9722b0bccb9a98441c26c89696-1200x630.png" width="100"/>
+  <img src="https://cdn.deepseek.com/images/deepseek-chat-open-graph-image.jpeg" width="100"/>
+  <img src="https://x.ai/opengraph-image.png?6014284994b18e1d" width="100"/>
+  <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_4g_512_lt_f94943af3be039176192d.png" width="100"/>
 </p>
 
 ### 🔍 How Detection Works
