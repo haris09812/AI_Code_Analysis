@@ -15,7 +15,7 @@
 
 ### File Analysis
 <img src="images/file-analysis-human.png"/>
-<img src="images/file-analysis-ai"/>
+<img src="images/file-analysis-ai.png"/>
 
 
 # 🧠 AI Code Analyzer
